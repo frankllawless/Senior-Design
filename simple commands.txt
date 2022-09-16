@@ -1,0 +1,92 @@
+#create a ROS package (run lines in order)
+cd ~/catkin_ws/src
+catkin_create_pkg "package name" std_msgs roscpp rospy
+cd ~/catkin_ws
+catkin_make 
+source devel/setup.bash
+
+#make hello world
+#!/usr/bin/env python
+# license removed for brevity
+import rospy
+from std_msgs.msg import String
+
+def talker():
+pub = rospy.Publisher('chatter', String, queue_size=10)
+rospy.init_node('talker', anonymous=True)
+rate = rospy.Rate(10) # 10hz
+while not rospy.is_shutdown():
+	hello_str = "hello world %s" % rospy.get_time()
+	rospy.loginfo(hello_str)
+	pub.publish(hello_str)
+	rate.sleep()
+
+if __name__ == '__main__':
+	try:
+		talker()
+	except rospy.ROSInterruptException:
+		pass
+		
+#make a simple velocity publisher for the TurtleBot3
+#!/usr/bin/env python
+import rospy
+from geometry_msgs.msg import Twist
+
+rospy.init_node('velocity_publisher')
+vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
+move = Twist()
+
+v = .5
+w = .5
+
+def move_vel():
+	rate = rospy.Rate(10)
+	move.linear.x = v
+	move.angular.z = w
+	i = 0
+	while not rospy.is_shutdown():
+		vel_pub.publish(move)
+		print("v = " + str(move.linear.x) +",", " w = " + str(move.angular.z))
+		rate.sleep()
+
+if __name__ == '__main__':
+	try:
+		move_vel()	
+	except rospy.ROSInterruptException:
+        	pass
+	
+#make a launch file
+<launch>
+  <node name="" pkg="" type=".py" output="screen"/>
+  <node name="" pkg="" type=".py" output="screen"/>
+</launch>
+
+#Connect to a TurtleBot3
+on Raspberry Pi:
+	username = ubuntu
+	password = turtlebot
+	
+	#update Host and Raspberry Pi IP 
+	nano ~/.bashrc
+	
+	#update wifi connection
+	cd /etc/netplan
+	sudo nano 50-cloud-init.yaml
+	#set static IP
+	dhcp4: no
+	addresses: [xxx.xxx.xxx.xxx/24] #in 50-cloud-init.yaml add this line where xxx.xxx.xxx.xxx is your static IP (follow the IP labeling convention in the Lab)
+	
+on Host Machine:
+	#connect to TurtleBot and initialize subscribers
+	ssh ubuntu@{Raspberry Pi IP}
+	roslaunch turtlebot3_bringup turtlebot3.robot.launch
+	
+	#scan for all wifi connections
+	sudo arp-scan -l
+	
+#run rvis with LIDAR
+roslaunch turtlebot3_gazebo turtlebot3_house.launch
+roslaunch turtlebot3_gazebo turtlebot3_gazebo_rviz.launch
+	
+
+
